@@ -1,1 +1,1 @@
-web: monitor
+worker: monitor
