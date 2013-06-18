@@ -5,9 +5,10 @@ import (
 	"time"
 	"io/ioutil"
 	"encoding/json"
+	"encoding/base64"
 	"net/http"
 	"net/smtp"
-	"os"
+	// "os"
 )
 
 type Config struct {
@@ -17,38 +18,63 @@ type Config struct {
 	Sites     []string
 }
 
+type Site struct {
+	Url       string
+	Status    int
+}
+
 func check(e error) {
 	if e != nil {
 		panic(e)
 	}
 }
 
-func notify(to string, status int, site string) {
-	api_key := os.Getenv("POSTMARK_API_KEY")
-	mail_server := os.Getenv("POSTMARK_SMTP_SERVER") + ":25"
+var sites = make([]Site, 0)
+var config Config
 
-	auth := smtp.PlainAuth(
-		"",
+/*
+ * sends email upon downed or timedout websites
+ */
+func notify(status string, site Site) {
+	// api_key := os.Getenv("POSTMARK_API_KEY")
+	// mail_server := os.Getenv("POSTMARK_SMTP_SERVER") + ":25"
+	api_key := "4c134dc5-a8d1-4162-a27c-9c0da889f428"
+	mail_server := "smtp.postmarkapp.com:25"
+
+	auth := smtp.CRAMMD5Auth(
 		api_key,
 		api_key,
-		"stark-chamber-8136.herokuapp.com",
 	)
 
-	time := time.Now().Format("Mon Jan _02 15:04:05 2006")
-	msg := http.StatusText(status)
-	if status == -1 {
-		msg = "Request Timeout"
+	from := "monitor@ripeworks.com"
+	stat := http.StatusText(site.Status)
+	time := time.Now().Format("Mon Jan 02 15:04:05 2006")
+	body := "<h1>Status for " + site.Url + "</h1>"
+	body += "<p>" + status + ": " + stat + " @ " + time + "</p>"
+
+	header := make(map[string]string)
+	header["From"] = from
+	header["To"] = config.Recipient
+	header["Subject"] = "Monitor - " + site.Url + " - " + status
+	header["Content-Type"] = "text/html; charset=\"utf-8\""
+	header["Content-Transfer-Encoding"] = "base64"
+
+	message := ""
+	for k, v := range header {
+		message += fmt.Sprintf("%s: %s\r\n", k, v)
 	}
+	message += "\r\n" + base64.StdEncoding.EncodeToString([]byte(body))
 
 	err := smtp.SendMail(
 		mail_server,
 		auth,
-		"monitor@ripeworks.com",
-		[]string{to},
-		[]byte(site + " reported as -- " + msg + " @ " + time),
+		from,
+		[]string{config.Recipient},
+		[]byte(message),
 	)
 	if err != nil {
-		panic(err)
+		fmt.Println("Unable to notify via email")
+		fmt.Println(err)
 	}
 }
 
@@ -56,9 +82,9 @@ func notify(to string, status int, site string) {
  * recursive func that sends websites to the jobs queue.
  * runs every config.Wait seconds.
  */
-func perform(config Config, jobs chan<- string, results <-chan int) {
-	for j := 0; j < len(config.Sites); j++ {
-		jobs <- config.Sites[j]
+func perform(jobs chan<- Site, results <-chan int) {
+	for j := 0; j < len(sites); j++ {
+		jobs <- sites[j]
 	}
 
 	for a := 0; a < len(config.Sites); a++ {
@@ -67,36 +93,42 @@ func perform(config Config, jobs chan<- string, results <-chan int) {
 
 	select {
 		case <-time.After(time.Duration(config.Wait) * time.Second):
-			perform(config, jobs, results)
+			perform(jobs, results)
 	}
 }
 
 /*
  * goroutine that processes a website and reports its status./
  */
-func worker(id int, jobs <-chan string, results chan<- int) {
+func worker(id int, jobs <-chan Site, results chan<- int) {
 	for j := range jobs {
-		fmt.Println("worker", id, "processing job", j)
-
-		res, err := http.Get(string(j))
+		res, err := http.Get(j.Url)
 		if err != nil {
-			fmt.Println("worker", id, "site", j, "is down!")
-			notify("mike@ripeworks.com", 200, j)
+			fmt.Println("[", id, "] - ", j.Url, " is DOWN")
+			if res != nil {
+				j.Status = res.StatusCode
+			}else {
+				j.Status = 503 // Something went wrong, use 'Gateway Timeout'
+			}
+			notify("DOWN", j)
 		}else {
-			fmt.Println("worker", id, "site", j, "is up")
+			if res.StatusCode < 400 && j.Status > 399 {
+				notify("BACK UP", j)
+			}
+			j.Status = res.StatusCode
+			fmt.Println("[", id, "] - ", j.Url, " is UP")
 		}
-		results <- res.StatusCode
+		results <- j.Status
 	}
 }
 
 func main() {
-	jobs := make(chan string, 100)
-	results := make(chan int, 100)
+	jobs := make(chan Site)
+	results := make(chan int)
 	done := make(chan bool, 1)
 
 	f, err := ioutil.ReadFile("./config.json")
 	check(err)
-	var config Config
 
 	json_err := json.Unmarshal(f, &config)
 	check(json_err)
@@ -105,6 +137,10 @@ func main() {
 		go worker(w, jobs, results)
 	}
 
-	perform(config, jobs, results)
+	for s := 0; s < len(config.Sites); s++ {
+		sites = append(sites, Site{Url: config.Sites[s], Status: 200})
+	}
+
+	perform(jobs, results)
 	<- done
 }
