@@ -1,9 +1,13 @@
 {
-	"Wait": 60,
+	"Wait": 10,
 	"Timeout": 5,
 	"Recipient": "mike@ripeworks.com",
 	"Sites": [
 		"http://ripeworks.com",
-		"http://osododododod.com"
+		"http://choctawnation.com",
+		"http://josephsgourmetpasta.com",
+		"http://devry-news-bureau.com",
+		"http://careeradvisoryboard.org",
+		"http://mybotanicplanet.com"
 	]
 }
