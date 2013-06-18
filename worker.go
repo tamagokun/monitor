@@ -96,25 +96,26 @@ func perform(jobs chan<- Site, results <-chan int) {
 }
 
 /*
- * goroutine that processes a website and reports its status./
+ * goroutine that processes a website and reports its status.
  */
 func worker(id int, jobs <-chan Site, results chan<- int) {
 	for j := range jobs {
 		res, err := http.Get(j.Url)
-		if err != nil {
-			fmt.Println("[", id, "] - ", j.Url, " is DOWN")
-			if res != nil {
-				j.Status = res.StatusCode
-			}else {
-				j.Status = 503 // Something went wrong, use 'Gateway Timeout'
-			}
+		status := 503 // Something went wrong, use 'Gateway Timeout'
+		if res != nil {
+			res.Body.Close()
+			status = res.StatusCode
+		}
+		if err != nil || status > 399 {
+			fmt.Println("[", id, "] -", j.Url, "is DOWN")
+			j.Status = status
 			notify("DOWN", j)
 		}else {
-			if res.StatusCode < 400 && j.Status > 399 {
+			if status < 400 && j.Status > 399 {
 				notify("BACK UP", j)
 			}
-			j.Status = res.StatusCode
-			fmt.Println("[", id, "] - ", j.Url, " is UP")
+			j.Status = status
+			fmt.Println("[", id, "] -", j.Url, "is UP")
 		}
 		results <- j.Status
 	}
@@ -136,7 +137,7 @@ func main() {
 	}
 
 	for s := 0; s < len(config.Sites); s++ {
-		sites = append(sites, Site{Url: config.Sites[s], Status: 200})
+		sites = append(sites, Site{Url: config.Sites[s], Status: 0})
 	}
 
 	perform(jobs, results)
