@@ -33,7 +33,7 @@ var sites = make([]Site, 0)
 var config Config
 
 /*
- * sends email upon downed or timedout websites
+ * sends email when site status changes
  */
 func notify(status string, site Site) {
 	api_key := os.Getenv("POSTMARK_API_KEY")
