@@ -1,7 +1,9 @@
 {
 	"Wait": 60,
 	"Timeout": 5,
+	"Recipient": "mike@ripeworks.com",
 	"Sites": [
-		"http://ripeworks.com"
+		"http://ripeworks.com",
+		"http://osododododod.com"
 	]
 }
