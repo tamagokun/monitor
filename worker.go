@@ -8,7 +8,7 @@ import (
 	"encoding/base64"
 	"net/http"
 	"net/smtp"
-	// "os"
+	"os"
 )
 
 type Config struct {
@@ -36,10 +36,8 @@ var config Config
  * sends email upon downed or timedout websites
  */
 func notify(status string, site Site) {
-	// api_key := os.Getenv("POSTMARK_API_KEY")
-	// mail_server := os.Getenv("POSTMARK_SMTP_SERVER") + ":25"
-	api_key := "4c134dc5-a8d1-4162-a27c-9c0da889f428"
-	mail_server := "smtp.postmarkapp.com:25"
+	api_key := os.Getenv("POSTMARK_API_KEY")
+	mail_server := os.Getenv("POSTMARK_SMTP_SERVER") + ":25"
 
 	auth := smtp.CRAMMD5Auth(
 		api_key,
