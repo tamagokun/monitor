@@ -35,7 +35,7 @@ var config Config
 /*
  * sends email when site status changes
  */
-func notify(status string, site Site) {
+func notify(status string, site *Site) {
 	api_key := os.Getenv("POSTMARK_API_KEY")
 	mail_server := os.Getenv("POSTMARK_SMTP_SERVER") + ":25"
 
@@ -80,13 +80,13 @@ func notify(status string, site Site) {
  * recursive func that sends websites to the jobs queue.
  * runs every config.Wait seconds.
  */
-func perform(jobs chan<- Site, results <-chan int) {
+func perform(jobs chan<- *Site, results <-chan int) {
 	for j := 0; j < len(sites); j++ {
-		jobs <- sites[j]
+		jobs <- &sites[j]
 	}
 
-	for a := 0; a < len(config.Sites); a++ {
-		<- results
+	for a := 0; a < len(sites); a++ {
+		<-results
 	}
 
 	select {
@@ -98,7 +98,7 @@ func perform(jobs chan<- Site, results <-chan int) {
 /*
  * goroutine that processes a website and reports its status.
  */
-func worker(id int, jobs <-chan Site, results chan<- int) {
+func worker(id int, jobs <-chan *Site, results chan<- int) {
 	for j := range jobs {
 		res, err := http.Get(j.Url)
 		status := 503 // Something went wrong, use 'Gateway Timeout'
@@ -124,8 +124,8 @@ func worker(id int, jobs <-chan Site, results chan<- int) {
 }
 
 func main() {
-	jobs := make(chan Site)
-	results := make(chan int)
+	jobs := make(chan *Site, 100)
+	results := make(chan int, 100)
 	done := make(chan bool, 1)
 
 	f, err := ioutil.ReadFile("./config.json")
