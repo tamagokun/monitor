@@ -1,0 +1,7 @@
+{
+	"Wait": 60,
+	"Timeout": 5,
+	"Sites": [
+		"http://ripeworks.com"
+	]
+}
