@@ -111,11 +111,12 @@ func worker(id int, jobs <-chan *Site, results chan<- int) {
 			j.Status = status
 			notify("DOWN", j)
 		}else {
-			if status < 400 && j.Status > 399 {
-				notify("BACK UP", j)
-			}
 			if status != j.Status {
 				fmt.Println("[", id, "] -", j.Url, "is UP -", status)
+			}
+			if status < 400 && j.Status > 399 {
+				j.Status = status
+				notify("BACK UP", j)
 			}
 			j.Status = status
 		}
