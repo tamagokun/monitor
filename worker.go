@@ -106,20 +106,16 @@ func worker(id int, jobs <-chan *Site, results chan<- int) {
 			res.Body.Close()
 			status = res.StatusCode
 		}
-		if err != nil || status > 399 {
-			fmt.Println("[", id, "] -", j.Url, "is DOWN")
+		if err != nil { status = 503 }
+		if status != j.Status {
+			// status changed, lets notify
+			state := "BACK UP"
+			if status > 399 { state = "DOWN" }
+			fmt.Println("[", id, "] - ", j.Url, "is ", state, " -", status)
 			j.Status = status
-			notify("DOWN", j)
-		}else {
-			if status != j.Status {
-				fmt.Println("[", id, "] -", j.Url, "is UP -", status)
-			}
-			if status < 400 && j.Status > 399 {
-				j.Status = status
-				notify("BACK UP", j)
-			}
-			j.Status = status
+			notify(state, j)
 		}
+		j.Status = status
 		results <- j.Status
 	}
 }
