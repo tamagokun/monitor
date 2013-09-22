@@ -114,7 +114,9 @@ func worker(id int, jobs <-chan *Site, results chan<- int) {
 			if status > 399 { state = "DOWN" }
 			fmt.Println("[", id, "] - ", j.Url, "is ", state, " -", status)
 			j.Status = status
-			notify(state, j)
+			if state == "BACK UP" || state == "DOWN" {
+				notify(state, j)
+			}
 		}
 		j.Status = status
 		results <- j.Status
