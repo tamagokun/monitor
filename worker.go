@@ -6,12 +6,14 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	"encoding/base64"
+	"net"
 	"net/http"
 	"net/smtp"
 	"os"
 )
 
 type Config struct {
+	From      string
 	Wait      int
 	Timeout   int
 	Recipient string
@@ -44,7 +46,7 @@ func notify(status string, site *Site) {
 		api_key,
 	)
 
-	from := "monitor@ripeworks.com"
+	from := config.From
 	stat := http.StatusText(site.Status)
 	time := time.Now().Format("Mon Jan 02 15:04:05 2006")
 	body := "<h1>Status for " + site.Url + "</h1>"
@@ -99,14 +101,9 @@ func perform(jobs chan<- *Site, results <-chan int) {
  * goroutine that processes a website and reports its status.
  */
 func worker(id int, jobs <-chan *Site, results chan<- int) {
+
 	for j := range jobs {
-		res, err := http.Get(j.Url)
-		status := 503 // Something went wrong, use 'Gateway Timeout'
-		if res != nil {
-			res.Body.Close()
-			status = res.StatusCode
-		}
-		if err != nil { status = 503 }
+		status := check_http_status(j.Url, true)
 		if status != j.Status {
 			// status changed, lets notify
 			state := "UP"
@@ -121,6 +118,38 @@ func worker(id int, jobs <-chan *Site, results chan<- int) {
 		j.Status = status
 		results <- j.Status
 	}
+}
+
+/*
+ * send GET request to url.
+ * Returns status code.
+ */
+func check_http_status(url string, retry bool) (int) {
+	status := 408 // Something went wrong, default to 'ClientRequestTimeout'
+	transport := http.Transport{
+		Dial: dialTimeout,
+	}
+
+	client := http.Client{
+		Transport: &transport,
+	}
+	
+	res, err := client.Get(url)
+	if err != nil && retry {
+		return check_http_status(url, false)
+	}
+	if res != nil {
+		res.Body.Close()
+		status = res.StatusCode
+	}
+	return status
+}
+
+/*
+ * Dial callback for HTTP client
+ */
+func dialTimeout(network, addr string) (net.Conn, error) {
+	return net.DialTimeout(network, addr, time.Duration(config.Timeout) * time.Second )
 }
 
 func main() {
