@@ -132,7 +132,7 @@ func check_http_status(url string, retry bool) (int) {
   if err != nil {
     fmt.Println("Unable to check")
     fmt.Println(err)
-    if retry { check_http_status(url, false) }
+    if retry { return check_http_status(url, false) }
   }
   if res != nil {
     res.Body.Close()
