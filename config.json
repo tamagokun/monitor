@@ -1,21 +1,21 @@
 {
-	"From": "monitor@ripeworks.com",
-	"Wait": 300,
-	"Timeout": 5,
-	"Recipient": "mike@ripeworks.com",
-	"Sites": [
-		"http://ripeworks.com",
-		"http://mikekruk.com",
-		"http://jets.ppapromo.com",
-		"http://choctawnation.com",
-		"http://careeradvisoryboard.org",
-		"http://mybotanicplanet.com",
-		"http://digmshift.com",
-		"http://goversicor.com",
-		"https://accessfamilylaw.com",
-		"http://eliteamg.com",
-		"http://dashboard.eliteamg.com",
-		"http://nightingalecompany.com",
-		"http://api.fridgecms.com/status"
-	]
+  "From": "monitor@ripeworks.com",
+  "Wait": 300,
+  "Timeout": 5,
+  "Recipient": "mike@ripeworks.com",
+  "Sites": [
+    "http://ripeworks.com",
+    "http://mikekruk.com",
+    "http://jets.ppapromo.com",
+    "http://choctawnation.com",
+    "http://careeradvisoryboard.org",
+    "http://mybotanicplanet.com",
+    "http://digmshift.com",
+    "http://goversicor.com",
+    "https://www.accessfamilylaw.com",
+    "http://eliteamg.com",
+    "http://dashboard.eliteamg.com",
+    "http://nightingalecompany.com",
+    "http://api.fridgecms.com/status"
+  ]
 }

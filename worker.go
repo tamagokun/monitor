@@ -6,7 +6,6 @@ import (
   "io/ioutil"
   "encoding/json"
   "encoding/base64"
-  "net"
   "net/http"
   "net/smtp"
   "os"
@@ -126,30 +125,20 @@ func worker(id int, jobs <-chan *Site, results chan<- int) {
  */
 func check_http_status(url string, retry bool) (int) {
   status := 408 // Something went wrong, default to 'ClientRequestTimeout'
-  transport := http.Transport{
-    Dial: dialTimeout,
-  }
-
-  client := http.Client{
-    Transport: &transport,
-  }
+  timeout := time.Duration(config.Timeout) * time.Second
+  client := http.Client{Timeout: timeout}
 
   res, err := client.Get(url)
-  if err != nil && retry {
-    return check_http_status(url, false)
+  if err != nil {
+    fmt.Println("Unable to check")
+    fmt.Println(err)
+    if retry { check_http_status(url, false) }
   }
   if res != nil {
     res.Body.Close()
     status = res.StatusCode
   }
   return status
-}
-
-/*
- * Dial callback for HTTP client
- */
-func dialTimeout(network, addr string) (net.Conn, error) {
-  return net.DialTimeout(network, addr, time.Duration(config.Timeout) * time.Second )
 }
 
 func main() {
