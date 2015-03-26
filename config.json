@@ -1,7 +1,7 @@
 {
   "From": "monitor@ripeworks.com",
   "Wait": 300,
-  "Timeout": 5,
+  "Timeout": 10,
   "Recipient": "mike@ripeworks.com",
   "Sites": [
     "http://ripeworks.com",
