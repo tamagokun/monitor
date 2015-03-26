@@ -48,10 +48,9 @@ func notify(status string, site *Site) {
   from := config.From
   stat := http.StatusText(site.Status)
   time := time.Now().Format("Mon Jan 02 15:04:05 2006")
-  body := "<center><br>"
-  body += "<h4>" + site.Url + " is " + status + "</h4>"
+  body := "<center><h3>" + site.Url + " is " + status + "</h3>"
   body += fmt.Sprintf("<p><strong>%s (%d)</strong> @ %s</p>", stat, site.Status, time)
-  body += "<br></center>"
+  body += "<br><br></center>"
 
   header := make(map[string]string)
   header["From"] = from
