@@ -128,14 +128,14 @@ func check_http_status(url string, retry bool) (int) {
   timeout := time.Duration(config.Timeout) * time.Second
   client := http.Client{Timeout: timeout}
 
-  res, err := client.Get(url)
+  res, err := client.Head(url)
   if err != nil {
     fmt.Println("Unable to check")
     fmt.Println(err)
     if retry { return check_http_status(url, false) }
   }
   if res != nil {
-    res.Body.Close()
+    defer res.Body.Close()
     status = res.StatusCode
   }
   return status
