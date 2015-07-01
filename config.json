@@ -1,12 +1,11 @@
 {
   "From": "monitor@ripeworks.com",
   "Wait": 300,
-  "Timeout": 10,
+  "Timeout": 20,
   "Recipient": "mike@ripeworks.com",
   "Sites": [
     "http://ripeworks.com",
     "http://mikekruk.com",
-    "http://jets.ppapromo.com",
     "http://choctawnation.com",
     "http://careeradvisoryboard.org",
     "http://digmshift.com",
