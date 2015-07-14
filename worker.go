@@ -9,6 +9,7 @@ import (
   "net/http"
   "net/smtp"
   "os"
+  "github.com/facebookgo/httpcontrol"
 )
 
 type Config struct {
@@ -103,7 +104,7 @@ func perform(jobs chan<- *Site, results <-chan int) {
 func worker(id int, jobs <-chan *Site, results chan<- int) {
 
   for j := range jobs {
-    status := check_http_status(j.Url, true)
+    status := check_http_status(j.Url)
     if status != j.Status {
       // status changed, lets notify
       state := "UP"
@@ -124,16 +125,20 @@ func worker(id int, jobs <-chan *Site, results chan<- int) {
  * send GET request to url.
  * Returns status code.
  */
-func check_http_status(url string, retry bool) (int) {
+func check_http_status(url string) (int) {
   status := 408 // Something went wrong, default to 'ClientRequestTimeout'
-  timeout := time.Duration(config.Timeout) * time.Second
-  client := http.Client{Timeout: timeout}
+
+  client := &http.Client{
+    Transport: &httpcontrol.Transport{
+      RequestTimeout: time.Duration(config.Timeout) * time.Second,
+      MaxTries: 3,
+    },
+  }
 
   res, err := client.Head(url)
   if err != nil {
     fmt.Println("Unable to check")
     fmt.Println(err)
-    if retry { return check_http_status(url, false) }
   }
   if res != nil {
     defer res.Body.Close()
